@@ -16,10 +16,14 @@ class PaymentMethod {
       this.description,
       required this.icon});
 
-  factory PaymentMethod.basic() => PaymentMethod(
-      id: const Uuid().v4(),
-      name: PaymentMethodTypes.cash.toString(),
-      type: PaymentMethodTypes.cash,
-      description: null,
-      icon: const Icon(Icons.attach_money_outlined));
+  factory PaymentMethod.basic({String? id,
+      String? name,
+      PaymentMethodTypes? type,
+      String? description,
+      Icon? icon}) => PaymentMethod(
+      id: id ?? const Uuid().v4(),
+      name: type?.name ?? PaymentMethodTypes.cash.name,
+      type: type ?? PaymentMethodTypes.cash,
+      description: description,
+      icon: icon ?? const Icon(Icons.attach_money_outlined));
 }

@@ -20,5 +20,20 @@ final GoRouter appRouter = GoRouter(
       name: SubsCalendarScreen.name,
       builder: (context, state) => const SubsCalendarScreen(),
       ),
+    GoRoute(
+      path: Routes.userProfile,
+      name: UserProfileScreen.name,
+      builder: (context, state) => const UserProfileScreen(),
+      ),
+    GoRoute(
+      path: Routes.userSubscriptions,
+      name: UserSubscriptionsScreen.name,
+      builder: (context, state) => const UserSubscriptionsScreen(),
+      ),
+    GoRoute(
+      path: Routes.subscriptionDetails,
+      name: SubscriptionDetailsScreen.name,
+      builder: (context, state) => const SubscriptionDetailsScreen(),
+      ),
   ],
 );

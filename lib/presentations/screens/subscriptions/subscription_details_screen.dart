@@ -3,21 +3,22 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:only_subx_ui/domain/entities/payment_method.dart';
 import 'package:only_subx_ui/domain/entities/subscription.dart';
 import 'package:only_subx_ui/presentations/providers/subscriptions_provider.dart';
-import 'dart:async';
+import 'package:only_subx_ui/shared/enums/enums.dart';
 
-import 'package:only_subx_ui/shared/enums/enums.dart'; // Para manejar las fechas
-
-class NewSubscriptionScreen extends ConsumerStatefulWidget {
-  static const name = 'subscription-screen';
-
-  const NewSubscriptionScreen({super.key});
+class SubscriptionDetailsScreen extends ConsumerStatefulWidget {
+  static String name = 'subscription-details-screen';
+  const SubscriptionDetailsScreen({super.key});
 
   @override
-  _NewSubscriptionScreenState createState() => _NewSubscriptionScreenState();
+  _SubscriptionDetailsScreenState createState() =>
+      _SubscriptionDetailsScreenState();
 }
 
-class _NewSubscriptionScreenState extends ConsumerState<NewSubscriptionScreen> {
+class _SubscriptionDetailsScreenState
+    extends ConsumerState<SubscriptionDetailsScreen> {
   final _formKey = GlobalKey<FormState>();
+
+  Subscription? currentSubscription;
 
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
@@ -37,6 +38,33 @@ class _NewSubscriptionScreenState extends ConsumerState<NewSubscriptionScreen> {
   Frecuency _frecuency = Frecuency.monthly;
   PaymentMethodTypes _paymentMethod = PaymentMethodTypes.cash;
   final Status _status = Status.active;
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    
+    currentSubscription = ref.read(currentSubscriptionProvider);
+
+    _nameController.text = currentSubscription?.name ?? _nameController.text;
+    _descriptionController.text =
+        currentSubscription?.description ?? _descriptionController.text;
+    _notesController.text = currentSubscription?.notes ?? _notesController.text;
+    _valueController.text =
+        currentSubscription?.value.toString() ?? _valueController.text;
+
+    _nextBillingDate = currentSubscription?.nextBillingDate ?? _nextBillingDate;
+    _reminderDays = currentSubscription?.reminderDays ?? _reminderDays;
+    _startDate = currentSubscription?.startDate ?? _startDate;
+    _cancellationDate =
+        currentSubscription?.cancellationDate ?? _cancellationDate;
+
+    _isAutoRenew = currentSubscription?.isAutoRenew ?? _isAutoRenew;
+    _isTrial = currentSubscription?.isTrial ?? _isTrial;
+
+    _frecuency = currentSubscription?.frecuency ?? _frecuency;
+    _paymentMethod = currentSubscription?.paymentMethod.type ?? _paymentMethod;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -171,7 +199,7 @@ class _NewSubscriptionScreenState extends ConsumerState<NewSubscriptionScreen> {
                   onPressed: () {
                     if (_formKey.currentState!.validate()) {
                       // Crear una nueva suscripción con los datos del formulario
-                      Subscription newSubscription = Subscription.basic(
+                      Subscription updatedSubscription = Subscription.basic(
                         name: _nameController.text,
                         description: _descriptionController.text,
                         notes: _notesController.text,
@@ -187,15 +215,36 @@ class _NewSubscriptionScreenState extends ConsumerState<NewSubscriptionScreen> {
                             PaymentMethod.basic(type: _paymentMethod),
                         isTrial: _isTrial,
                       );
-                      ref
-                          .read(subscriptionsProvider.notifier).update((state) => [...state, newSubscription]);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text('Suscripción creada con éxito')),
-                      );
+
+                      if (currentSubscription != null) {
+                        List<Subscription> subscriptions =
+                            ref.watch(subscriptionsProvider);
+                        int idxSubToUpdate = subscriptions.indexWhere(
+                            (sub) => sub.id == currentSubscription?.id);
+                        if (idxSubToUpdate >= 0) {
+                          subscriptions[idxSubToUpdate] = updatedSubscription;
+                          ref
+                              .read(subscriptionsProvider.notifier)
+                              .update((state) => [...subscriptions]);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text('Suscripción actualizada')));
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content:
+                                    Text('No se ha encontrado la suscripción')),
+                          );
+                        }
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text('Error obteniendo la suscripción')),
+                        );
+                      }
                     }
                   },
-                  child: const Text('Crear Suscripción'),
+                  child: const Text('Actualizar Suscripción'),
                 ),
               ),
             ],

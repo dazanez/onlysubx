@@ -1,17 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:only_subx_ui/config/helpers/human_formats.dart';
+import 'package:only_subx_ui/config/helpers/subscriptions_helpers.dart';
 import 'package:only_subx_ui/config/routes/routes.dart';
 import 'package:only_subx_ui/domain/entities/entities.dart';
+import 'package:only_subx_ui/presentations/providers/subscriptions_provider.dart';
+import 'package:only_subx_ui/presentations/providers/user_provider.dart';
+import 'package:only_subx_ui/presentations/screens/subscriptions/custom_subscriptions_listview.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends ConsumerWidget {
   static const name = 'home-screen';
 
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colors = Theme.of(context).colorScheme;
+    final List<Subscription> subscriptions =
+        SubscriptionsHelpers.getPastSubscriptions(
+            ref.watch(subscriptionsProvider));
 
     return Scaffold(
       appBar: AppBar(
@@ -23,11 +32,12 @@ class HomeScreen extends StatelessWidget {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            _WelcomeView(user: User.example()),
+            const _WelcomeView(),
             _CardSummaryView(),
             _ActionButtons(),
-            const _PaymentsListView(
-              title: 'Recent',
+            CustomSubscriptionsListView(
+              title: 'Recientes',
+              subscriptions: subscriptions,
             ),
             // const _PaymentsListView(title: 'Recent payments')
           ],
@@ -37,12 +47,13 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-class _WelcomeView extends StatelessWidget {
-  final User user;
-  const _WelcomeView({required this.user});
+class _WelcomeView extends ConsumerWidget {
+  // final User user;
+  const _WelcomeView();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final User user = ref.watch(userProvider);
     final textStyle = Theme.of(context).textTheme;
     final colors = Theme.of(context).colorScheme;
 
@@ -77,17 +88,20 @@ class _WelcomeView extends StatelessWidget {
               ),
             ],
           ),
-          CircleAvatar(
-            radius: 50,
-            // backgroundImage: NetworkImage(user.photoUrl ?? 'https://gratisography.com/wp-content/uploads/2024/01/gratisography-cyber-kitty-800x525.jpg'),
-            foregroundImage: NetworkImage(user.photoUrl ??
-                'https://gratisography.com/wp-content/uploads/2024/01/gratisography-cyber-kitty-800x525.jpg'),
-            child: Text(
-              user.name,
-              style: textStyle.titleSmall,
-              textAlign: TextAlign.center,
-              overflow: TextOverflow.ellipsis,
-              maxLines: 2,
+          GestureDetector(
+            onTap: () => context.push(Routes.userProfile),
+            child: CircleAvatar(
+              radius: 50,
+              // backgroundImage: NetworkImage(user.photoUrl ?? 'https://gratisography.com/wp-content/uploads/2024/01/gratisography-cyber-kitty-800x525.jpg'),
+              foregroundImage: NetworkImage(user.photoUrl ??
+                  'https://gratisography.com/wp-content/uploads/2024/01/gratisography-cyber-kitty-800x525.jpg'),
+              child: Text(
+                user.name,
+                style: textStyle.titleSmall,
+                textAlign: TextAlign.center,
+                overflow: TextOverflow.ellipsis,
+                maxLines: 2,
+              ),
             ),
           )
         ],
@@ -96,12 +110,13 @@ class _WelcomeView extends StatelessWidget {
   }
 }
 
-class _CardSummaryView extends StatelessWidget {
+class _CardSummaryView extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final textStyle = Theme.of(context).textTheme;
     final colors = Theme.of(context).colorScheme;
     String yearlyAccValue = '****';
+    List<Subscription> subscriptions = ref.watch(subscriptionsProvider);
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 30, vertical: 20),
@@ -113,7 +128,7 @@ class _CardSummaryView extends StatelessWidget {
             Column(
               children: [
                 Text(
-                  '\$149.900',
+                  '${SubscriptionsHelpers.getSubscriptionsTotalCost(subscriptions)}',
                   style: textStyle.titleLarge,
                   textAlign: TextAlign.center,
                 ),
@@ -154,7 +169,7 @@ class _CardSummaryView extends StatelessWidget {
                 ),
                 Column(
                   children: [
-                    Text('Smart Fit', style: textStyle.titleMedium),
+                    Text(SubscriptionsHelpers.getMostExpensiveSub(subscriptions).name, style: textStyle.titleMedium),
                     const SizedBox(height: 10),
                     Text('Más costosa',
                         style: textStyle.titleSmall
@@ -232,100 +247,5 @@ class _ActionButtons extends StatelessWidget {
   }
 }
 
-class _PaymentsListView extends StatelessWidget {
-  final String title;
-  final String? subtitle;
 
-  const _PaymentsListView({required this.title, this.subtitle = ''});
 
-  @override
-  Widget build(BuildContext context) {
-    final textStyle = Theme.of(context).textTheme;
-    final Subscription subscription = Subscription.example();
-
-    return Column(
-      children: [
-        Container(
-          margin: const EdgeInsets.all(10),
-          padding: const EdgeInsets.symmetric(horizontal: 10),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(title, style: textStyle.bodyMedium),
-              if (subtitle != null)
-                Text(
-                  subtitle!,
-                  style: textStyle.bodyMedium,
-                )
-            ],
-          ),
-        ),
-        ListView(
-          physics: const NeverScrollableScrollPhysics(),
-          shrinkWrap: true,
-          children: [
-            _CustomSubscriptionListItem(subscription: subscription),
-            _CustomSubscriptionListItem(subscription: subscription),
-            _CustomSubscriptionListItem(subscription: subscription),
-            _CustomSubscriptionListItem(subscription: subscription),
-            _CustomSubscriptionListItem(subscription: subscription),
-            _CustomSubscriptionListItem(subscription: subscription),
-            _CustomSubscriptionListItem(subscription: subscription),
-            _CustomSubscriptionListItem(subscription: subscription),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-class _CustomSubscriptionListItem extends StatelessWidget {
-  final Subscription subscription;
-  const _CustomSubscriptionListItem({required this.subscription});
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    final textStyle = Theme.of(context).textTheme;
-
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      padding: const EdgeInsets.symmetric(horizontal: 5),
-      height: 80,
-      decoration: BoxDecoration(
-          border: Border(bottom: BorderSide(color: colors.secondary))),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisSize: MainAxisSize.max,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(3),
-            decoration: BoxDecoration(
-                color: colors.onInverseSurface,
-                borderRadius: BorderRadius.circular(8)),
-            child: Icon(
-              subscription.icon.icon,
-              size: 50,
-            ),
-          ),
-          const SizedBox(width: 20),
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                subscription.name,
-                style: textStyle.titleSmall,
-              ),
-              Text(
-                HumanFormats.humanReadableDate(subscription.nextBillingDate),
-                style: textStyle.bodyMedium,
-              )
-            ],
-          )
-        ],
-      ),
-    );
-  }
-}

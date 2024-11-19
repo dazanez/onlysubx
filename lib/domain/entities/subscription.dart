@@ -74,6 +74,8 @@ class Subscription {
       Subscription(
           id: Randoms.getUuid(),
           name: name,
+          description: description,
+          notes: notes,
           currency: currency,
           value: value,
           createdAt: DateTime.now(),
